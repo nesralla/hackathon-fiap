@@ -1,0 +1,9 @@
+47/47 ━━━━━━━━━━━━━━━━━━━━ 0s 7ms/step  
+              precision    recall  f1-score   support
+
+           0       0.99      0.94      0.96       749
+           1       0.94      0.99      0.96       749
+
+    accuracy                           0.96      1498
+   macro avg       0.96      0.96      0.96      1498
+weighted avg       0.96      0.96      0.96      1498

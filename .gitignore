@@ -1,5 +1,5 @@
 data/
-.ipnyb_checkpoints/
+.ipynb_checkpoints/
 .venv/
 __pycache__/
-.DS_Store/
+.DS_Store

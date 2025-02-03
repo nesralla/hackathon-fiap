@@ -1,33 +1,40 @@
-Resultados: 
-
-              precision    recall  f1-score   support
-
-           0       0.94      0.98      0.96      1184
-           1       0.98      0.94      0.96      1183
-
-    accuracy                           0.96      2367
-   macro avg       0.96      0.96      0.96      2367
-weighted avg       0.96      0.96      0.96      2367
-
-ROC AUC: 0.9619678982659753
-
 com balanceamento manual da base, tendo 6396 itens cortante e 5917 não cortante.
 ou seja o balanceamento manual foi feito com 6396 de cada classe
 
-
-Acurácia média da validação cruzada: 0.9909 (+/- 0.0078)
-74/74 ━━━━━━━━━━━━━━━━━━━━ 1s 10ms/step
 Resultados: 
 
               precision    recall  f1-score   support
 
-           0       0.98      0.98      0.98      1184
-           1       0.98      0.98      0.98      1183
+           0       0.96      0.98      0.97      1184
+           1       0.98      0.96      0.97      1183
 
-    accuracy                           0.98      2367
-   macro avg       0.98      0.98      0.98      2367
-weighted avg       0.98      0.98      0.98      2367
+    accuracy                           0.97      2367
+   macro avg       0.97      0.97      0.97      2367
+weighted avg       0.97      0.97      0.97      2367
 
-ROC AUC: 0.9788747829613214
+ROC AUC: 0.9699983293733294
 
+------------------------------------------------------------------------------------
 com abordagem de validação cruzada
+
+
+Acurácia média da validação cruzada: 0.9857 (+/- 0.0124)
+Precisão média da validação cruzada: 0.9872 (+/- 0.0139)
+Recall médio da validação cruzada: 0.9843 (+/- 0.0270)
+ROC AUC médio da validação cruzada: 0.9856 (+/- 0.0127)
+F1 médio da validação cruzada: 0.9855 (+/- 0.0132)
+
+Resultados: 
+
+              precision    recall  f1-score   support
+
+           0       0.99      0.94      0.97      1184
+           1       0.95      0.99      0.97      1183
+
+    accuracy                           0.97      2367
+   macro avg       0.97      0.97      0.97      2367
+weighted avg       0.97      0.97      0.97      2367
+
+ROC AUC: 0.9679025496333189
+
+

@@ -3,8 +3,8 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import KFold
 
-import ObtencaoMassa as om
-import modeloUtils as mu
+import utils.obtencaoMassaUtils as om
+import utils.modeloUtils as mu
 
 # %%Obtendo o dataset
 
@@ -57,14 +57,14 @@ checkpointer = mu.get_checkpointer()
 monitor = mu.get_monitor()
 model = mu.get_cnn_model(y_train_tf)
 
-#Treinamento do model
+# #Treinamento do model
 print("Treinando o modelo com a base balanceada tratada... \n\n")
 history = model.fit(x_train, y_train_tf, validation_split=0.25, callbacks=[monitor,checkpointer],
                     verbose=1, epochs=45, batch_size=50, shuffle=True)
 
-mu.show_val_loss_history(history)
+# mu.show_val_loss_history(history)
 
-mu.show_val_accuracy_history(history)
+# mu.show_val_accuracy_history(history)
 
 # %%Testando o modelo
 cnn_predict = model.predict(x_test)
@@ -83,6 +83,10 @@ kfold = KFold(n_splits=10, shuffle=True, random_state=42)
 
 fold_model = mu.get_cnn_model(y_train_tf)
 fold_accuracies = []
+fold_precision = []
+fold_recall = []
+fold_roc_auc = []
+fold_f1 = []
 
 for fold, (train_idx, val_idx) in enumerate(kfold.split(x_train, y_train)):
     print(f"Treinando o fold {fold + 1}...")
@@ -103,13 +107,25 @@ for fold, (train_idx, val_idx) in enumerate(kfold.split(x_train, y_train)):
         callbacks=[checkpointer, monitor],
         verbose=1
     )
-    
     # Avaliação
+    predict_value = fold_model.predict(x_val_fold)
+    predict_classes = np.argmax(predict_value, axis=1)
+    true_classes = np.argmax(y_val_fold, axis=1)
+
     val_loss, val_accuracy = fold_model.evaluate(x_val_fold, y_val_fold, verbose=0)
     fold_accuracies.append(val_accuracy)
+    fold_precision.append(mu.get_precision(true_classes, predict_classes))
+    fold_recall.append(mu.get_recall(true_classes, predict_classes))
+    fold_roc_auc.append(mu.get_roc_auc(true_classes, predict_classes))
+    fold_f1.append(mu.get_f1(true_classes, predict_classes))
+
 
 # Desempenho médio
 print(f"Acurácia média da validação cruzada: {np.mean(fold_accuracies):.4f} (+/- {np.std(fold_accuracies):.4f})")
+print(f"Precisão média da validação cruzada: {np.mean(fold_precision):.4f} (+/- {np.std(fold_precision):.4f})")
+print(f"Recall médio da validação cruzada: {np.mean(fold_recall):.4f} (+/- {np.std(fold_recall):.4f})")
+print(f"ROC AUC médio da validação cruzada: {np.mean(fold_roc_auc):.4f} (+/- {np.std(fold_roc_auc):.4f})")  
+print(f"F1 médio da validação cruzada: {np.mean(fold_f1):.4f} (+/- {np.std(fold_f1):.4f})")
 
 
 cnn_folder_predict = fold_model.predict(x_test)

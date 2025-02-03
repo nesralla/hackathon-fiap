@@ -3,88 +3,91 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
-from PIL import Image
-import requests  # Para enviar notificações via API (exemplo: Pushbullet)
+from time import time
+import requests
 
 # Carregar o modelo treinado
 modelo_path = "modelo/my_model.keras"  # Substitua pelo caminho do seu modelo .keras
 model = load_model(modelo_path)
 
-# Parâmetros do modelo
-IMG_SIZE = 64  # Deve ser compatível com a entrada do modelo
+# Parâmetros do modelo e vídeo
+IMG_SIZE = 64
+VIDEO_PATH = "video/video.mp4"  # Substitua pelo caminho do seu vídeo
+ALERT_INTERVAL = 30  # Tempo mínimo entre notificações (segundos)
 
 # Configuração da notificação (opcional)
 PUSHBULLET_API_KEY = "o.fTnOEQ5QXNUj7mkLCwreFLuEylREvqSO"  # Substitua pela sua chave API do Pushbullet
 SEND_NOTIFICATIONS = True  # Defina como True para enviar notificações
 
+# Variável para controlar tempo da última notificação
+last_notification_time = 0
 
 def send_notification(title, message):
     """Envia uma notificação via Pushbullet."""
-    if SEND_NOTIFICATIONS and PUSHBULLET_API_KEY:
-        url = "https://api.pushbullet.com/v2/pushes"
-        headers = {"Access-Token": PUSHBULLET_API_KEY, "Content-Type": "application/json"}
-        data = {"type": "note", "title": title, "body": message}
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 200:
-            print("Notificação enviada!")
+    global last_notification_time
+    current_time = time()
+    
+    # Verifica se já passou 30 segundos desde a última notificação
+    if (current_time - last_notification_time) >= ALERT_INTERVAL:
+        if SEND_NOTIFICATIONS and PUSHBULLET_API_KEY:
+            url = "https://api.pushbullet.com/v2/pushes"
+            headers = {
+                "Access-Token": PUSHBULLET_API_KEY,
+                "Content-Type": "application/json"
+            }
+            data = {
+                "type": "note",
+                "title": title,
+                "body": message
+            }
+            response = requests.post(url, json=data, headers=headers)
+            
+            if response.status_code == 200:
+                print("[NOTIFICAÇÃO ENVIADA] Objeto cortante detectado!")
+                last_notification_time = current_time  # Atualiza o tempo da última notificação
+            else:
+                print("[ERRO] Falha ao enviar notificação.")
         else:
-            print("Falha ao enviar notificação:", response.text)
+            print("[ALERTA] Objeto cortante detectado!")
+    else:
+        print("[IGNORADO] Objeto já detectado recentemente.")
 
+# Captura de vídeo
+cap = cv2.VideoCapture(VIDEO_PATH)
 
-def preprocess_frame(frame):
-    """Pré-processa o frame para ser compatível com o modelo."""
-    image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Converter para RGB
-    image = Image.fromarray(image)  # Converter para formato PIL
-    image = image.resize((IMG_SIZE, IMG_SIZE))  # Redimensionar para o tamanho esperado
-    image = img_to_array(image) / 255.0  # Normalizar para o intervalo [0, 1]
-    return np.expand_dims(image, axis=0)  # Adicionar dimensão de batch
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break  # Sai do loop quando o vídeo termina
 
+    # Redimensiona para o tamanho do modelo
+    img = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
+    img = img.astype("float32") / 255.0
+    img = img_to_array(img)
+    img = np.expand_dims(img, axis=0)
 
-def detectar_objetos(video_path):
-    """Processa um vídeo e detecta objetos cortantes."""
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        print("Erro ao abrir o vídeo!")
-        return
+    # Faz a predição
+    prediction = model.predict(img)
+    predicted_class = np.argmax(prediction, axis=1)[0]
+    label = ''
+    color = (0, 0, 0)
 
-    frame_count = 0
+    # Verifica se é um objeto cortante (classe 1)
+    if predicted_class == 1:
+        label = "Cortante Detectado!"
+        color = (0, 0, 255)  # Vermelho
+        send_notification("Alerta!", "Objeto cortante detectado no vídeo.")
+    else:
+        label = "Nao Cortante"
+        color = (0, 255, 0)  # Verde
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break  # Fim do vídeo
+    cv2.putText(frame, label, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
-        frame_count += 1
-        processed_frame = preprocess_frame(frame)
+    # Exibe o vídeo (opcional)
+    cv2.imshow("Detecta objetos cortantes", frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):  # Pressione 'q' para sair
+        break
 
-        # Fazer a previsão
-        prediction = model.predict(processed_frame)[0]
-
-        # Exibir a previsão no frame
-        if prediction[1] > 0.5:  # Considera que [0] é "não cortante" e [1] é "cortante"
-            label = "Cortante Detectado!"
-            color = (0, 0, 255)  # Vermelho
-            send_notification("Alerta de Detecção!", "Objeto cortante detectado no vídeo!")
-        else:
-            label = "Nao Cortante"
-            color = (0, 255, 0)  # Verde
-
-        # Desenhar rótulo no frame
-        cv2.putText(frame, label, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-
-        # Exibir frame processado
-        cv2.imshow("Detecção de Objetos Cortantes", frame)
-
-        # Pressione 'q' para sair
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-# Caminho do vídeo
-video_path = "video/video.mp4"  # Substitua pelo caminho do seu vídeo
-
-# Iniciar a detecção
-detectar_objetos(video_path)
+# Libera os recursos
+cap.release()
+cv2.destroyAllWindows()

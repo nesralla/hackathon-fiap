@@ -5,6 +5,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from time import time
 import requests
+import os
 
 # Carregar o modelo treinado
 modelo_path = "modelo/my_model.keras"  # Substitua pelo caminho do seu modelo .keras
@@ -16,7 +17,7 @@ VIDEO_PATH = "video/video.mp4"  # Substitua pelo caminho do seu vídeo
 ALERT_INTERVAL = 30  # Tempo mínimo entre notificações (segundos)
 
 # Configuração da notificação (opcional)
-PUSHBULLET_API_KEY = "o.fTnOEQ5QXNUj7mkLCwreFLuEylREvqSO"  # Substitua pela sua chave API do Pushbullet
+PUSHBULLET_API_KEY = os.getenv("PUSHBULLET_API_KEY")  # Substitua pela sua chave API do Pushbullet
 SEND_NOTIFICATIONS = True  # Defina como True para enviar notificações
 
 # Variável para controlar tempo da última notificação
